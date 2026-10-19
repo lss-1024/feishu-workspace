@@ -6,7 +6,7 @@ import {matches} from './supabase/functions/_shared/engine.ts';
 const {document,window}=parseHTML('<html><body><div id="app"></div><div id="content"></div><div id="notice"></div><dialog id="modal"></dialog></body></html>');
 // linkedom exposes select.value as a getter; a browser also supplies a setter.
 Object.defineProperty(window.HTMLSelectElement.prototype,'value',{get(){const a=[...this.querySelectorAll('option')];return a.find(x=>x.hasAttribute('selected'))?.value||a[0]?.value||'';},set(v){for(const o of this.querySelectorAll('option'))o.toggleAttribute('selected',o.value===v);},configurable:true});
-const context=vm.createContext({document,window,console,matches,structuredClone,createClient:()=>({}),setTimeout,clearTimeout,confirm:()=>false,location:{origin:'https://lss-1024.github.io',pathname:'/feishu-workspace/'}});
+const context=vm.createContext({document,window,console,matches,structuredClone,createClient:()=>({auth:{onAuthStateChange:()=>{}}}),setTimeout,clearTimeout,confirm:()=>false,location:{origin:'https://lss-1024.github.io',pathname:'/feishu-workspace/'}});
 const source=fs.readFileSync(new URL('./src/app.js',import.meta.url),'utf8').replace(/^import .*;\r?\n/gm,'').replace(/run\(init\);\s*$/,'');
 vm.runInContext(source,context);
 const evaluate=code=>vm.runInContext(code,context);
@@ -32,3 +32,5 @@ evaluate(`state.read={table:'src',conditions:[],mode:'all',job:null};readPage();
 assert.equal(document.querySelector('#read-table').value,'src');
 assert.equal(document.querySelector('#audit-field select').querySelectorAll('option').length,3);
 console.log('ui: 14 assertions passed');
+
+evaluate(`login();`);assert.ok(document.querySelector("#forgot-password"));evaluate(`recoveryPage();`);assert.equal(document.querySelectorAll("input[autocomplete=new-password]").length,2);assert.ok(document.querySelector("#cancel-recovery"));
