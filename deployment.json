@@ -1,0 +1,25 @@
+{
+  "status": "backend_deployed_frontend_publishing",
+  "hosting": "GitHub Pages + existing Supabase project",
+  "supabase_project_ref": "dkjkcovxvsajdyfvltse",
+  "company_access": "invited_members_only",
+  "roles": [
+    "admin",
+    "operator",
+    "viewer"
+  ],
+  "existing_reminder_site": "preserve",
+  "existing_desktop_app": "preserve",
+  "database_prefix": "fa_",
+  "storage_bucket": "fa-workspace-files",
+  "business_data_migration": "not_requested_not_performed",
+  "credential_migration": "never_copy_local_cli_credentials",
+  "cloud_write_policy": "preview_then_confirm_then_verify_no_automatic_retry",
+  "pending": [
+    "Publish and verify company URL",
+    "Create enterprise Feishu app and register callback, scopes and availability",
+    "Configure app in workspace and complete each member OAuth",
+    "Validate real Feishu read and explicitly confirmed write"
+  ],
+  "connection_status": "Supabase CLI authorized; isolated migration applied; backend deployed"
+}

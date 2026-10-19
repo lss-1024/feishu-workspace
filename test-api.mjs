@@ -1,0 +1,20 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {stripTypeScriptTypes} from 'node:module';
+import * as engine from './supabase/functions/_shared/engine.ts';
+const source=stripTypeScriptTypes(fs.readFileSync(new URL('./supabase/functions/fa-api/index.ts',import.meta.url),'utf8'),{mode:'strip'}).replace(/^import .*;\r?\n/gm,'');
+let handler,current,stored,versionChange=false,calls=[],writeAttempts=0;
+const table={id:'T',workspace_id:'w',version:1,source:{kind:'sheet',token:'test',table:'sheet',header:1}};
+const fields=[{id:'n',name:'商品名称',type:1,column:1,revision:7},{id:'d',name:'发货时间',type:5,column:2,revision:7},{id:'c',name:'商品编码',type:1,column:3,revision:7}];
+function reset(){current={id:'J',table_id:'T',workspace_id:'w',action:'read',state:'queued',diagnostics:{},checkpoint:{source:table.source,fields,revision:7,conditions:[{field:'d',op:'date_on',value:'2026-10-14'}],mode:'all',rows:[],page:'',next_row:2,requests:0,scanned:0,table_version:1,row_count:1000,phase:'scan',scan_fields:['d'],scan_index:0,partial:{},candidates:[],full_index:0}};calls=[];stored=null;versionChange=false;}
+const db={from(name){let patch;const chain={select(){return chain},eq(){return chain},is(){return chain},single:async()=>({data:patch?(stored=current={...current,...patch}):structuredClone(name==='fa_jobs'?current:table),error:null}),update(v){patch=v;return chain}};return chain;},rpc:async()=>{if(current.state!=='queued')return{data:[]};current.state='running';return {data:[structuredClone(current)]};}};
+const feishu=async(token,path)=>{calls.push(path);const area=decodeURIComponent(path).match(/values\/(.*?)\?/)[1];const m=area.match(/!([A-Z]+)(\d+):([A-Z]+)(\d+)/);const [_,a,rs,z,re]=m;const start=Number(rs),end=Number(re),rows=[];for(let r=start;r<=end;r++){if(a==='B')rows.push([r===5?46309:46308]);else if(start===1)rows.push(['商品名称']);else rows.push(['商品'+r,r===5?46309:46308,r===5?'00123':'999']);}return{revision:versionChange&&a==='A'&&start>1?8:7,valueRange:{values:rows}};};
+const helpers={db,json:(v,s=200)=>Response.json(v,{status:s}),cors:{},assert:(v,m)=>{if(!v)throw Error(m)},checked:async p=>{const r=await p;if(r.error)throw Error(r.error.message);return r.data;},user:async()=>({id:'u'}),member:async()=>({role:'operator'}),secret:async()=>null,saveSecret:async()=>{},log:async()=>{},callback:'test',accessToken:async()=> 'fake',resolveLink:()=>{},fields:async()=>fields,feishu,col:n=>String.fromCharCode(64+n),digest:async()=> 'hash',preview:()=>{},confirm:()=>{},writeStep:()=>{writeAttempts++;throw Error('Network result uncertain');},Deno:{serve:f=>handler=f},...engine};
+new Function(...Object.keys(helpers),source)(...Object.values(helpers));
+const step=()=>handler(new Request('https://test',{method:'POST',body:JSON.stringify({action:'read_step',workspace:'w',id:'J'})}));
+reset();let r=await step();assert.equal(r.status,200);assert.equal(current.state,'queued');assert.equal(current.checkpoint.phase,'full');assert.deepEqual(current.checkpoint.candidates,[5]);assert.equal(calls.length,1);assert(calls[0].includes('B2'));r=await step();assert.equal(r.status,200);assert.equal(current.state,'complete');assert.equal(current.checkpoint.rows.length,1);assert.equal(current.checkpoint.rows[0].values.c,'00123');assert.equal(calls.length,3);assert.equal(current.diagnostics.requests,3);
+reset();await step();versionChange=true;r=await step();assert.equal(r.status,400);assert.equal(current.state,'failed');assert.equal(current.diagnostics.error,'电子表格版本变化，请重新读取');
+reset();current.action='write';current.confirmed_by='u';
+const write=()=>handler(new Request('https://test',{method:'POST',body:JSON.stringify({action:'write_step',workspace:'w',id:'J'})}));
+r=await write();assert.equal(r.status,400);assert.equal(current.state,'needs_review');assert.equal(writeAttempts,1);r=await write();assert.equal(r.status,400);assert.equal(writeAttempts,1);
+console.log('api: 19 assertions passed; filter-column scan, version guard, uncertain writes never retried');

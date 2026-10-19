@@ -1,0 +1,17 @@
+{
+  "name": "feishu-company-workspace",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "esbuild src/app.js --bundle --format=esm --minify --outfile=web/app.js",
+    "test": "node --experimental-strip-types test-engine.mjs && node --experimental-strip-types test-ui.mjs && node --experimental-strip-types test-transfer.mjs && node --experimental-strip-types test-api.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.118.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12",
+    "linkedom": "0.18.12"
+  }
+}
